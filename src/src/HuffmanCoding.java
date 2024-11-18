@@ -6,9 +6,10 @@ public class HuffmanCoding {
 
     private static final int BYTE_RANGE = 256; // Intervalo para bytes (0-255)
     private int[] frequencies = new int[BYTE_RANGE]; // Frequências dos bytes
+    private ListaEncadeadaSimplesDesordenada<HuffmanNode> nodesList = new ListaEncadeadaSimplesDesordenada<>();
 
-    // Nó da árvore de Huffman
-    private class HuffmanNode {
+    // Classe do nó da árvore de Huffman
+    private class HuffmanNode implements Comparable<HuffmanNode> {
         public byte data;
         public int frequency;
         public HuffmanNode left, right;
@@ -18,6 +19,11 @@ public class HuffmanCoding {
             this.frequency = frequency;
             this.left = null;
             this.right = null;
+        }
+
+        @Override
+        public int compareTo(HuffmanNode other) {
+            return Integer.compare(this.frequency, other.frequency);
         }
 
         public boolean isLeaf() {
@@ -37,50 +43,45 @@ public class HuffmanCoding {
         }
     }
 
-    // Construir a árvore de Huffman manualmente
-    private HuffmanNode buildTree() {
-        HuffmanNode[] nodes = new HuffmanNode[BYTE_RANGE];
-        int size = 0;
-
+    // Construir a árvore de Huffman usando a ListaEncadeadaSimplesDesordenada
+    private HuffmanNode buildTree() throws Exception {
         for (int i = 0; i < BYTE_RANGE; i++) {
             if (frequencies[i] > 0) {
-                nodes[size++] = new HuffmanNode((byte) i, frequencies[i]);
+                nodesList.guardeNoFinal(new HuffmanNode((byte) i, frequencies[i]));
             }
         }
 
-        while (size > 1) {
-            int min1 = 0, min2 = 1;
-            if (nodes[min2].frequency < nodes[min1].frequency) {
-                int temp = min1;
-                min1 = min2;
-                min2 = temp;
-            }
+        while (nodesList.getTamanho() > 1) {
+            HuffmanNode min1 = removeMin();
+            HuffmanNode min2 = removeMin();
 
-            for (int i = 2; i < size; i++) {
-                if (nodes[i].frequency < nodes[min1].frequency) {
-                    min2 = min1;
-                    min1 = i;
-                } else if (nodes[i].frequency < nodes[min2].frequency) {
-                    min2 = i;
-                }
-            }
+            HuffmanNode combined = new HuffmanNode((byte) 0, min1.frequency + min2.frequency);
+            combined.left = min1;
+            combined.right = min2;
 
-            HuffmanNode combined = new HuffmanNode((byte) 0, nodes[min1].frequency + nodes[min2].frequency);
-            combined.left = nodes[min1];
-            combined.right = nodes[min2];
-
-            if (min1 < min2) {
-                nodes[min1] = combined;
-                nodes[min2] = nodes[size - 1];
-            } else {
-                nodes[min2] = combined;
-                nodes[min1] = nodes[size - 1];
-            }
-
-            size--;
+            insertNode(combined);
         }
 
-        return nodes[0];
+        return nodesList.getPrimeiro();
+    }
+
+    // Função para remover o nó com menor frequência
+    private HuffmanNode removeMin() throws Exception {
+        HuffmanNode minNode = nodesList.getPrimeiro();
+        nodesList.removaPrimeiro();
+        return minNode;
+    }
+
+    // Inserir um nó na lista de forma ordenada
+    private void insertNode(HuffmanNode node) throws Exception {
+        int position = 0;
+        for (int i = 0; i < nodesList.getTamanho(); i++) {
+            if (node.frequency < nodesList.get(i).frequency) {
+                break;
+            }
+            position++;
+        }
+        nodesList.guardeEm(position, node);
     }
 
     // Gerar os códigos de Huffman manualmente
@@ -170,7 +171,7 @@ public class HuffmanCoding {
     }
 
     // Função para comprimir o arquivo
-    public void compressFile(File inputFile, File compressedFile) throws IOException {
+    public void compressFile(File inputFile, File compressedFile) throws Exception {
         calculateFrequencies(inputFile);
 
         HuffmanNode root = buildTree();
@@ -178,21 +179,17 @@ public class HuffmanCoding {
         String[] codes = new String[BYTE_RANGE];
         generateCodes(root, codes, "");
 
-        try (
-            FileInputStream fis = new FileInputStream(inputFile);
-            DataOutputStream dos = new DataOutputStream(new FileOutputStream(compressedFile))
-        ) {
+        try (FileInputStream fis = new FileInputStream(inputFile);
+             DataOutputStream dos = new DataOutputStream(new FileOutputStream(compressedFile))) {
             writeTree(root, dos);
             writeCompressedData(fis, dos, codes, inputFile.length());
         }
     }
 
     // Função para descomprimir o arquivo
-    public void decompressFile(File compressedFile, File decompressedFile) throws IOException {
-        try (
-            DataInputStream dis = new DataInputStream(new FileInputStream(compressedFile));
-            FileOutputStream fos = new FileOutputStream(decompressedFile)
-        ) {
+    public void decompressFile(File compressedFile, File decompressedFile) throws Exception {
+        try (DataInputStream dis = new DataInputStream(new FileInputStream(compressedFile));
+             FileOutputStream fos = new FileOutputStream(decompressedFile)) {
             HuffmanNode root = readTree(dis);
             readCompressedData(dis, fos, root);
         }

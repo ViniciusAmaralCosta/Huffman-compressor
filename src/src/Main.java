@@ -4,9 +4,9 @@ import java.io.File;
 
 public class Main {
     public static void main(String[] args) {
-        File inputFile = new File("input.txt");
+        File inputFile = new File("video2s.mp4");
         File compressedFile = new File("compressed.huff");
-        File decompressedFile = new File("decompressed.txt");
+        File decompressedFile = new File("decompressed.mp4");
 
         HuffmanCoding huffman = new HuffmanCoding();
 

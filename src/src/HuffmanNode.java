@@ -2,7 +2,7 @@ package src;
 
 import java.io.Serializable;
 
-public class HuffmanNode implements Comparable<HuffmanNode>, Serializable {
+public class HuffmanNode implements Comparable<HuffmanNode>, Serializable, Cloneable {
     private static final long serialVersionUID = 1L;
 
     public Byte data;
@@ -24,5 +24,19 @@ public class HuffmanNode implements Comparable<HuffmanNode>, Serializable {
 
     public boolean isLeaf() {
         return left == null && right == null;
+    }
+
+    @Override
+    public HuffmanNode clone() {
+        try {
+            HuffmanNode cloned = (HuffmanNode) super.clone();
+            // Clona os filhos manualmente se não forem nulos
+            if (this.left != null) cloned.left = this.left.clone();
+            if (this.right != null) cloned.right = this.right.clone();
+            return cloned;
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
